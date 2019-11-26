@@ -35,7 +35,7 @@ router.post('/authenticate', async (req, res) => {
     
     // //Realizar a verificação se a senha que foi enviada é a mesma que esta cadastrada
     if(!await bcrypt.compare(password, user.password))
-        return res.status(400).send({ err: 'Invalid Password' })
+        return res.status(400).send({ error: 'Invalid Password' })
 
     // Não exisbir o password na lista 
     user.password = undefined;
@@ -45,6 +45,36 @@ router.post('/authenticate', async (req, res) => {
         user,
         token: generateToken( { id: user.id })
     });
+});
+
+// Created um usuário
+router.post('/register', async (req, res) => {
+    // Receber via req.body o email e o password do novo usuário
+    const { email, password } = req.body;
+    // Verificar se o email e o password foi preenchido
+    if(email === '' || password === '')
+        return res.status(400).send( { error: 'Password or email empty'  } );
+    
+    try {
+        // Verificar se o email já existe
+        if(await User.findOne( { email } ))
+            return res.status(400).send( { error: 'User already exits' } );
+
+        // Email não localizar Registrar
+        const user = await User.create(req.body);
+        // Não retornar o password mesmo criptografado
+        user.password = undefined;
+
+        return res.send( {
+            user,
+            token: generateToken( { id: user.id } )
+        });
+
+
+    } catch (error) {
+        return res.status(400).send( { error: 'Registration failed' } );
+    }
+
 });
 
 module.exports = app => app.use('/auth', router);
