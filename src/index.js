@@ -7,6 +7,7 @@ require('dotenv').config();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cors());
 
 //Referenciando os CONTROLLER repassando a app 
 //que é nossa aplicação index pega todas os nosso controller
