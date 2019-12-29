@@ -1,9 +1,15 @@
 const express = require('express');
-const authMiddleware = require('../middleware/auth')
+const sharp = require('sharp'); 
+const path = require('path'); 
+const fs = require('fs');
+const multer = require('multer');
 
+const uploadConfig  = require('../config/upload');
+const authMiddleware = require('../middleware/auth');
 const Category = require('../models/category');
 
 const router = express.Router();
+const upload = multer(uploadConfig);
 
 //Interceptador - toda requisição que chegar é verificado o token 
 router.use(authMiddleware);
@@ -13,7 +19,6 @@ router.use(authMiddleware);
 // -------------------------------------------------------------------------------------
 router.get('/', async (req, res) => {
     try {
-        //.populare('user') é para o mongo listar também os usuários do relacionamento
        const category = await Category.find();
 
        return res.send( { category } )
@@ -38,38 +43,92 @@ router.get('/:categoryId', async (req, res) => {
 // -------------------------------------------------------------------------------------
 // Criar Categoria de Produto
 // -------------------------------------------------------------------------------------
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
+        try {
+            //Capturar os dados recebidos do request
+            const { title } = req.body;
+            const { filename: image } = req.file;
+
+            //Desestruturar o arquivo separando nome da extensão
+            const[nameTitle] = title.split(' ');
+            const fileName = `${nameTitle}.jpg`;
+
+            //Criação do Post
+            const category = await Category.create({
+                title,
+                image: fileName,
+            });
+
+            //Redimencionar a imagem recebida para tamanho 500pixel, qualidade 70%
+            //utilizando a biblioteca Sharp e SALVAR o arquivo na pasta RESIZED
+            await sharp(req.file.path)
+                .resize(400)
+                .jpeg({quality: 50})
+                .toFile(path.resolve(req.file.destination, 'resized', fileName))
+
+                //Excluir a imagem orignal enviada
+                fs.unlinkSync(req.file.path);
+
+            return res.send({ category } );
+
+        } catch (error) {
+            return res.status(400).send( { error: 'Error creating new Category' } );
+        }
+});
+// -------------------------------------------------------------------------------------
+// Atualizar Categoria de Produto
+// -------------------------------------------------------------------------------------
+router.put('/:categoryId', upload.single('image'), async (req, res) => {
     try {
-        //Receber os parametros passados
+        //Capturar os dados recebidos do request
         const { title } = req.body;
         const { filename: image } = req.file;
 
         //Desestruturar o arquivo separando nome da extensão
-        const[name] = image.split('.');
-        const fileName = `${name}.jpg`;
+        const[nameTitle] = title.split(' ');
+        const fileName = `${nameTitle}.jpg`;
 
-        //Além de receber todos os parametros no body temos que pegar o req.userId passado pelo middleware
-        //...req.body, user: req.userId }
-        const project = await Projects.create( { title, description, user: req.userId } );
+        //Criação do Post
+        const category = await Category.findByIdAndUpdate(req.params.categoryId,{
+            title,
+            image: fileName,
+        }, { new: true, useFindAndModify: false });
 
-        //Como o Tasks que é recebida é um array, vamos percorrer este array
-        //Para que ele não salve antes de percorrer todas as interações usaremos
-        //await Promise.All
-        await Promise.all(tasks.map(async task => {
-            const projectTask = new Task( { ...task, project: project._id } );
+        //Redimencionar a imagem recebida para tamanho 500pixel, qualidade 70%
+        //utilizando a biblioteca Sharp e SALVAR o arquivo na pasta RESIZED
+        await sharp(req.file.path)
+            .resize(400)
+            .jpeg({quality: 50})
+            .toFile(path.resolve(req.file.destination, 'resized', fileName))
 
-            await projectTask.save();
-            project.tasks.push(projectTask);
-        }));
+            //Excluir a imagem orignal enviada
+            fs.unlinkSync(req.file.path);
 
-        //Salvar tudo no projeto
-        await project.save();
-
-        return res.send( { project } );
+        return res.send({ category } );
 
     } catch (error) {
-        //console.log(error);
-        return res.status(400).send( { error: 'Error creating new project' } );
+        console.log(error);
+        return res.status(400).send( { error: 'Error Updating new category' } );
+    }
+});
+// -------------------------------------------------------------------------------------
+// Deletar o Category
+// -------------------------------------------------------------------------------------
+router.delete('/:categoryId', async (req, res) => {
+    try {
+        // Buscar a categoria
+        const category = await Category.findById(req.params.categoryId);
+        // Buscar o caminho da imagem da categoria
+        const pathImage = path.resolve(__dirname,'..','..','uploads','resized', category.image);
+        //Excluir a image do servidor
+        fs.unlinkSync(pathImage);
+        // Remover categoria
+        category.remove();
+
+        return res.status(200).send({ success: 'ok' });
+        
+    } catch (error) {
+        return res.status(400).send( { error: 'Error deleting Category.' } );
     }
 });
 
