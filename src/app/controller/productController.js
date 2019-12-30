@@ -57,6 +57,11 @@ router.get('/category/:categoryId', async (req, res) => {
 // Criar Categoria de Produto
 // -------------------------------------------------------------------------------------
 router.post('/', upload.single('image'), async (req, res) => {
+
+    if (!req.file) {
+        return res.send('Please select an image to upload');
+    }
+
     try {
         const { name, description, price, category } = req.body;
         
@@ -71,7 +76,6 @@ router.post('/', upload.single('image'), async (req, res) => {
             price
         });
       
-
         if(fs.existsSync(req.file.path)){
             //Redimencionar a imagem recebida para tamanho 500pixel, qualidade 70%
             //utilizando a biblioteca Sharp e SALVAR o arquivo na pasta RESIZED
@@ -87,7 +91,6 @@ router.post('/', upload.single('image'), async (req, res) => {
         return res.json(product);
 
     } catch (error) {
-        console.log(error);
         if(fs.existsSync(req.file.path)){
             fs.unlinkSync(req.file.path);
         }
@@ -146,14 +149,14 @@ router.delete('/:productId', async (req, res) => {
     try {
         // Buscar a categoria
         const product = await Product.findById(req.params.productId);
-        // Buscar o caminho da imagem da categoria
+        // Buscar o caminho da imagem da Product
         const pathImage = path.resolve(__dirname,'..','..','uploads','resized', product.image);
         // Verificar se o arquivo existe
         if(fs.existsSync(pathImage)){
             //Excluir a image do servidor
             fs.unlinkSync(pathImage);
         }
-        // Remover categoria
+        // Remover Product
         product.remove();
 
         return res.status(200).send({ success: 'ok' });

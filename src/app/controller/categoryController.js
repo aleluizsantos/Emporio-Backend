@@ -44,36 +44,42 @@ router.get('/:categoryId', async (req, res) => {
 // Criar Categoria de Produto
 // -------------------------------------------------------------------------------------
 router.post('/', upload.single('image'), async (req, res) => {
-        try {
-            //Capturar os dados recebidos do request
-            const { title } = req.body;
-            const { filename: image } = req.file;
+    if (!req.file) {
+        return res.send('Please select an image to upload');
+    }
+    try {
+        //Capturar os dados recebidos do request
+        const { title } = req.body;
+        
+        const nameSave =  name.replace(/ /g,'').toLowerCase();
+        const filenameSave = `${nameSave}.jpg`;
 
-            //Desestruturar o arquivo separando nome da extensão
-            const[nameTitle] = title.split(' ');
-            const fileName = `${nameTitle}.jpg`;
+        //Criação do Post
+        const category = await Category.create({
+            title,
+            image: fileName,
+        });
 
-            //Criação do Post
-            const category = await Category.create({
-                title,
-                image: fileName,
-            });
-
+        if(fs.existsSync(req.file.path)){
             //Redimencionar a imagem recebida para tamanho 500pixel, qualidade 70%
             //utilizando a biblioteca Sharp e SALVAR o arquivo na pasta RESIZED
             await sharp(req.file.path)
                 .resize(400)
                 .jpeg({quality: 50})
-                .toFile(path.resolve(req.file.destination, 'resized', fileName))
+                .toFile(path.resolve(req.file.destination, 'resized', filenameSave))
 
                 //Excluir a imagem orignal enviada
                 fs.unlinkSync(req.file.path);
-
-            return res.send({ category } );
-
-        } catch (error) {
-            return res.status(400).send( { error: 'Error creating new Category' } );
         }
+
+        return res.send({ category } );
+
+    } catch (error) {
+        if(fs.existsSync(req.file.path)){
+            fs.unlinkSync(req.file.path);
+        }
+        return res.status(400).send( { error: 'Error creating new Category' } );
+    }
 });
 // -------------------------------------------------------------------------------------
 // Atualizar Categoria de Produto
