@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     try {
        const category = await Category.find();
 
-       return res.send( { category } )
+       return res.send(category);
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Category' } );
@@ -34,7 +34,7 @@ router.get('/:categoryId', async (req, res) => {
     try {
         const category = await Category.findById(req.params.categoryId);
 
-        return res.send( { category } );
+        return res.send(category);
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Category.' } );
@@ -72,7 +72,7 @@ router.post('/', upload.single('image'), async (req, res) => {
                 fs.unlinkSync(req.file.path);
         }
 
-        return res.send({ category } );
+        return res.send(category);
 
     } catch (error) {
         if(fs.existsSync(req.file.path)){
@@ -110,7 +110,7 @@ router.put('/:categoryId', upload.single('image'), async (req, res) => {
             //Excluir a imagem orignal enviada
             fs.unlinkSync(req.file.path);
 
-        return res.send({ category } );
+        return res.send(category);
 
     } catch (error) {
         console.log(error);

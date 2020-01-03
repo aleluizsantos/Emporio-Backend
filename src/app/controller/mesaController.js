@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
         // Busca todas as mesas cadastradas 
        const mesa = await Mesa.find();
         // retorna o objeto em forma de json
-       return res.send( { mesa } )
+       return res.send(mesa)
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Mesa' } );
@@ -30,7 +30,7 @@ router.get('/:mesaId', async (req, res) => {
         // Buscar dados mesa pelo parametro @mesaId
         const mesa = await Mesa.findById(req.params.mesaId);
         // retorna o objeto em forma de json            
-        return res.send( { mesa } );
+        return res.send(mesa);
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Mesa.' } );

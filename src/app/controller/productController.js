@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     try {
        const product = await Product.find();
 
-       return res.send( { product } )
+       return res.send(product);
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Product' } );
@@ -34,7 +34,7 @@ router.get('/:productId', async (req, res) => {
     try {
         const product = await Product.findById(req.params.productId);
 
-        return res.send( { product } );
+        return res.send(product);
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Product.' } );
@@ -47,7 +47,7 @@ router.get('/category/:categoryId', async (req, res) => {
     try {
         const product = await Product.find({category: req.params.categoryId});
 
-        return res.send( { product } );
+        return res.send(product);
 
     } catch (error) {
         return res.status(400).send( { error: 'Error loading Product.' } );
